@@ -1,0 +1,2 @@
+ansible_ssh_host: 10.11.12.51
+ansible_ssh_port: 2200

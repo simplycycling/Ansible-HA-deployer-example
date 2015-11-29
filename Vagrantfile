@@ -3,7 +3,11 @@
 
 VAGRANTFILE_API_VERSION = "2"
 
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+# use the same key for each machine
+config.ssh.insert_key = false
+
   config.vm.define "web00" do |web00|
     web00.vm.box = "ubuntu/trusty64"
     web00.vm.hostname = "web00"

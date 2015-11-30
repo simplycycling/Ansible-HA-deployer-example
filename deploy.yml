@@ -1,0 +1,50 @@
+---
+- name: Push to api nodes
+  hosts: tomcat
+  sudo: True
+  vars_prompt:
+    - name: "version"
+      prompt: "version"
+      private: no
+  tasks:
+    - name: create directory
+      file: path=/var/opt/apps/{{ version }}/ROOT state=directory owner=deploy group=deploy
+    - name: push packages out to api nodes
+      unarchive: >
+        src=~/Documents/open_source_projects/Ansible-HA-deployer-example/ROOT-{{ version }}.war
+        dest=/var/opt/apps/{{ version }}/ROOT/
+        owner=deploy
+        group=deploy
+
+
+- name: Deploy to api nodes
+  hosts: tomcat
+  sudo: True
+  vars_prompt:
+    - name: "version"
+      prompt: "version"
+      private: no
+  serial: 1
+  tasks:
+    - name: Pause for a moment
+      pause: prompt="Get the ok from java dev to deploy to {{ hostname }}, then hit Enter"
+    - name: stop tomcat_1
+      service: name=tomcat_1 state=stopped
+    - name: stop tomcat_2
+      service: name=tomcat_2 state=stopped
+    - name: Remove old tomcat_1 link
+      file: path=/var/opt/tomcat_1/webapps/ROOT state=absent
+    - name: Remove old tomcat_2 link
+      file: path=/var/opt/tomcat_2/webapps/ROOT state=absent
+    - name: clear tomcat_1 logs
+      shell: "> /var/opt/tomcat_1/logs/catalina.out"
+    - name: clear tomcat_2 logs
+      shell: "> /var/opt/tomcat_2/logs/catalina.out"
+    - name: Link new app, tomcat_1
+      file: src=/var/opt/apps/{{ version }}/ROOT dest=/var/opt/tomcat_1/webapps/ROOT state=link
+    - name: Link new app, tomcat_2
+      file: src=/var/opt/apps/{{ version }}/ROOT dest=/var/opt/tomcat_2/webapps/ROOT state=link
+    - name: start tomcat_1
+      service: name=tomcat_1 state=started
+    - name: start tomcat_2
+      service: name=tomcat_2 state=started
